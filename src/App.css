@@ -1,0 +1,947 @@
+/* Import Finger Paint font */
+@import url('https://fonts.googleapis.com/css2?family=Finger+Paint&display=swap');
+
+
+.App {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.image-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.main-image {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  display: block;
+}
+
+.click-note {
+  position: absolute;
+  top: 375px;
+  left: 929px;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  height: auto;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.click-note:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  filter: brightness(1.1) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  animation: gentle-pulse 1.5s infinite;
+}
+.notebook-image {
+  position : absolute;
+  width : 1550px;
+  height: 840px; 
+  top: -45px;
+  left : -11px;
+  
+  
+  
+}
+  @keyframes gentle-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+.close-drawer{
+   position: absolute;
+  top: 70px;
+  left: -10px;
+  width: 50px;
+  height: 580px;
+  background-color: #adb6bf;
+  cursor: pointer;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  border-radius: 70px;
+  border : 5px solid #4379a4;
+  z-index: 10;
+}
+.open-drawer {
+  position: absolute;
+  top: 70px;
+  left: 0px;
+  width: 200px;
+  height: 580px;
+  background-color: #adb6bf;
+  cursor: pointer;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  border-radius: 70px;
+  border : 5px solid #4379a4;
+  z-index: 10;
+}
+.drawer:hover {
+  background: linear-gradient(135deg, #b8d4f0 0%, #8ec4ee 100%);
+  transform: translateX(5px);
+  box-shadow: 3px 0 12px rgba(0, 0, 0, 0.25);
+}
+.drawer-icons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 1px;
+    width: 180px;
+    height: 550px;
+    padding: 20px;
+
+}
+/* Individual icon styling */
+.drawer-icon {
+    width: 70px;
+    height: 70px;
+
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.drawer-icon img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+}
+.drawer-icon:hover {
+    transform: translateY(-3px) scale(1.05);
+}
+.drawer-icon img[alt="Date"]{
+    width: 150px;  /* Custom size for date and text icons */
+    height: 150px;
+}
+.drawer-icon img[alt="Background"] {
+   margin-top:4px;
+}
+.drawer-icon img[alt="Sticky Note"] {
+   width: 130px;
+   height: 130px;
+    margin-top:-2px;
+}
+.drawer-icon img[alt="Polaroid"], .drawer-icon img[alt="Highlighter"], .drawer-icon img[alt="Tape"] {
+   width: 150px;
+   height: 150px;
+
+}
+.drawer-icon img[alt="Text"] {
+   width: 180px;
+   height: 180px;
+}
+
+/* Z-Index Hierarchy */
+/* Base elements: 100-199 */
+/* Interactive elements: 200-299 */
+/* Overlays and controls: 1000+ */
+
+/* Sticky Note Styles */
+.sticky-note {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 2px dashed transparent;
+    transition: border-color 0.2s ease;
+    z-index: 250; /* Higher than polaroid */
+}
+
+.sticky-note.selected {
+    border-color: #4a90e2;
+    padding: -10px; 
+    z-index: 300; /* Even higher when selected */
+}
+
+.sticky-note.locked {
+    cursor: default;
+    opacity: 0.9;
+    z-index: 250;
+}
+
+.sticky-note.locked:hover {
+    opacity: 1;
+}
+
+.sticky-note-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* Text Box Styles */
+.text-box {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 1px dashed transparent;
+    transition: border-color 0.2s ease;
+    border-radius: 5px;
+    padding: 8px;
+    overflow: visible;
+    z-index: 260; /* Higher than polaroid */
+    background: transparent; /* Make background transparent */
+}
+
+.text-box.selected {
+    border-color: #4a90e2;
+    overflow: visible;
+    z-index: 310; /* Even higher when selected */
+    background: transparent; /* Keep transparent when selected */
+}
+
+.text-box.locked {
+    cursor: default;
+    opacity: 0.9;
+    z-index: 260;
+    background: transparent; /* Keep transparent when locked */
+}
+
+.text-box.locked:hover {
+    opacity: 1;
+}
+
+.text-box-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Finger Paint', cursive;
+    text-align: center;
+    pointer-events: none;
+    word-wrap: break-word;
+    overflow: hidden;
+    line-height: 1.2;
+    background: transparent; /* Make content background transparent */
+}
+
+.text-box-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent; /* Make input background transparent */
+    resize: none;
+    padding: 0;
+    font-family: 'Finger Paint', cursive;
+    text-align: center;
+    color: inherit;
+}
+
+/* Remove any background from highlighting states */
+.text-box.highlighted .text-box-content {
+    background: transparent;
+}
+
+.text-box.highlighting .text-box-content {
+    background: transparent;
+}
+
+/* Date Box Styles */
+.date-box {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 2px dashed transparent;
+    transition: border-color 0.2s ease;
+    border-radius: 8px;
+    padding: 10px;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 270; /* Higher than polaroid */
+}
+
+.date-box.selected {
+    border-color: #4a90e2;
+    border-style: dashed;
+    overflow: visible;
+    z-index: 320; /* Even higher when selected */
+}
+
+.date-box.locked {
+    cursor: pointer;
+    opacity: 0.9;
+    border: none;
+    z-index: 270;
+}
+
+.date-box.locked:hover {
+    opacity: 1;
+}
+
+.date-box.locked.selected {
+    border: 2px solid #ff6b6b;
+    z-index: 320;
+}
+
+.date-box-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Finger Paint', cursive;
+    text-align: center;
+    pointer-events: none;
+    word-wrap: break-word;
+    overflow: hidden;
+    line-height: 1.2;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Tape Element Styles */
+.tape-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 2px dashed transparent;
+    transition: border-color 0.2s ease;
+    border-radius: 4px;
+    overflow: visible;
+    opacity: 1.8;
+    z-index: 280; /* Higher than polaroid */
+}
+
+.tape-element.selected {
+    border-color: #4a90e2;
+    border-style: dashed;
+    overflow: visible;
+    z-index: 330; /* Even higher when selected */
+}
+
+.tape-element.locked {
+    cursor: pointer;
+    opacity: 0.8;
+    border: none;
+    z-index: 280;
+}
+
+
+.tape-element.locked.selected {
+    border: 2px solid #ff6b6b;
+    z-index: 330;
+}
+
+.tape-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    opacity: 50;
+}
+
+
+/* Polaroid Element Styles - CSS-based polaroid */
+.polaroid-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    border: 1px dashed transparent;
+    transition: border-color 0.2s ease;
+    border-radius: 4px;
+    overflow: visible;
+    padding: 2px;
+    z-index: 200; /* Base layer for polaroids */
+}
+
+.polaroid-element.selected {
+    border-color: #4a90e2;
+    border-style: dashed;
+    border-width: 1px;
+    overflow: visible;
+    padding: 1px;
+    z-index: 250; /* Higher when selected but still below overlays */
+}
+
+.polaroid-element.locked {
+    cursor: pointer;
+    opacity: 0.95;
+    border: none;
+    z-index: 200;
+}
+
+.polaroid-element.locked:hover {
+    opacity: 1;
+}
+
+.polaroid-element.locked.selected {
+    border: 1px solid #ff6b6b;
+    z-index: 250;
+}
+
+/* CSS-based Polaroid Container */
+.polaroid-container {
+    width: 100%;
+    height: 100%;
+    background: #8dbde5;
+    border-radius: 4px;
+    padding: 8px 8px 25px 8px; /* Top, right, bottom (larger for polaroid effect), left */
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Photo area that takes up the main space */
+.polaroid-photo {
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 2px;
+    position: relative;
+}
+
+/* The uploaded image fills the photo area exactly */
+.uploaded-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 2px;
+}
+
+/* White bottom area for polaroid effect */
+.polaroid-bottom {
+    height: 45px; /* Fixed height for the white bottom area */
+    width: 100%;
+    background: #8dbde5;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Optional: Add slight vintage effect */
+.polaroid-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(255,255,255,0.05) 50%, transparent 51%);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+/* Resize Handles - Highest z-index for interaction */
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #4a90e2;
+    border: 1px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001; /* Always on top for interaction */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.resize-handle:hover {
+    background: #357abd;
+    transform: scale(1.1);
+}
+
+.resize-handle.top-left {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+
+.resize-handle.top-right {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+
+.resize-handle.bottom-left {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}
+
+.resize-handle.bottom-right {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+
+/* Rotation Handle - High z-index for interaction */
+.rotate-handle {
+    position: absolute;
+    top: -16px;
+    right: 20px;
+    width: 16px;
+    height: 16px;
+    background: #ff6b6b;
+    border: 1px solid white;
+    border-radius: 50%;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: bold;
+    z-index: 1001; /* Always on top for interaction */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.rotate-handle:hover {
+    background: #ff5252;
+    transform: scale(1.1);
+}
+
+.rotate-handle:active {
+    cursor: grabbing;
+}
+
+/* Confirm Handle - High z-index for interaction */
+.confirm-handle {
+    position: absolute;
+    top: -16px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    background: #28a745;
+    border: 1px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    font-weight: bold;
+    z-index: 1001; /* Always on top for interaction */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-handle:hover {
+    background: #218838;
+    transform: scale(1.15);
+}
+
+/* Highlighter Mode Indicator - Very high z-index */
+.highlighter-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff16e;
+    color: #000000;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 2000; /* Always visible */
+    pointer-events: none;
+}
+
+/* Active highlighter tool styling */
+.drawer-icon.active {
+  
+    
+    transform: scale(1.3);
+   
+}
+
+/* Text box content positioning for highlighting */
+.text-box-content {
+    position: relative;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Highlight background */
+.highlight-background {
+    position: absolute;
+    height : 50px;
+    top: 153x;
+    left: -10px;
+    right: -6px;
+   
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 0, 0.6) 0%, 
+        rgba(255, 215, 0, 0.6) 100%);
+    z-index: -1;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+    transition: width 0.02s linear;
+}
+
+/* Text content positioning */
+.text-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Highlighting animation state */
+.text-box.highlighting .highlight-background {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 0, 0.8) 0%, 
+        rgba(255, 215, 0, 0.7) 50%,
+        rgba(255, 255, 0, 0.6) 100%);
+    box-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
+}
+
+/* Final highlighted state */
+.text-box.highlighted .highlight-background {
+    background: rgba(255, 255, 0, 0.4);
+    width: 100% !important;
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.2);
+}
+
+/* Crosshair cursor for highlighter mode */
+.text-box[style*="cursor: crosshair"] {
+    cursor: crosshair !important;
+}
+
+/* Drawer - High z-index to stay accessible */
+.close-drawer, .open-drawer {
+    z-index: 1500; /* Above all scrapbook elements but below indicators */
+}
+
+.text-box.locked.selected {
+    border-color: #ff6b6b; /* Different color for locked+selected */
+    border-style: solid; /* Solid border for locked items */
+}
+.sticky-note.locked.selected {
+    border-color: #ff6b6b; /* Different color for locked+selected */
+    border-style: solid; /* Solid border for locked items */
+}
+
+
+
+/* Background Component Styles */
+
+
+.background-option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px; /* Much smaller container */
+    height: 120px; /* Much smaller container */
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 19px;
+    transition: transform 0.2s ease;
+    overflow: hidden; /* Crop any excess whitespace */
+}
+
+.background-option-icon:hover {
+    transform: scale(1.1);
+}
+
+.background-option-icon img {
+    width: 120%; /* Slightly larger than container to crop whitespace */
+    height: 120%; /* Slightly larger than container to crop whitespace */
+    object-fit: cover; /* Changed from contain to cover to crop whitespace */
+    border-radius: 4px;
+    object-position: center; /* Center the cropped image */
+}
+.background-option-icon img[alt="Checkered Pattern"] {
+    margin-left: 10px; /* Adjust this value to move it more or less to the right */
+}
+
+
+.dot-pattern {
+    transition: opacity 0.2s ease;
+}
+
+.dot-pattern:hover {
+    opacity: 0.8;
+    box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.2);
+}
+
+.background-element {
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.background-element.selected {
+    border: 2px solid #4a90e2;
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.background-element:hover {
+    border-color: rgba(74, 144, 226, 0.3);
+}
+
+/* ...existing code... */
+
+/* Specific CSS for checkered pattern images */
+.background-element.leftcheckered img,
+.background-element.rightcheckered img {
+    position: absolute !important;
+    top: -65px !important;        /* ADJUST TOP POSITION FOR CHECKERED */
+    left: -355px !important;      /* ADJUST LEFT POSITION FOR CHECKERED */
+    width: 1200px !important;     /* ADJUST WIDTH FOR CHECKERED */
+    height: 810px !important;     /* ADJUST HEIGHT FOR CHECKERED */
+    object-fit: repeat !important;
+    opacity: 0.4 !important;      /* ADJUST OPACITY FOR CHECKERED */
+    pointer-events: none !important;
+}
+
+
+/* Doodle grid styles */
+.doodle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 columns */
+    grid-template-rows: repeat(6, 1fr); /* 6 rows */
+    gap: 18px;
+    padding: 20px;
+    height: 100%;
+    align-items: center;
+    justify-items: center;
+    max-height: 540px;
+    overflow-y: auto;
+}
+
+.doodle-option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+
+.doodle-option-icon img {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+}
+
+/* Doodle element styles */
+.doodle-element {
+    position: absolute;
+    cursor: move;
+}
+
+.doodle-element.selected {
+    border: 2px solid #4a90e2;
+}
+
+.doodle-element.locked {
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.doodle-element.locked:hover {
+    opacity: 1;
+}
+
+.doodle-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* Prevent text selection on the main container during interactions */
+.image-container {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+/* ...existing code... */
+
+/* Alphabet grid styles */
+.alphabet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 30px;
+    width: 180px;
+    height: 700px;
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto; /* Make it scrollable */
+    align-items: center;
+    justify-items: center;
+}
+
+.alphabet-option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.alphabet-option-icon:hover {
+    transform: scale(1.3);
+
+}
+
+.alphabet-option-icon img {
+    width: 150px;
+    height: 15s0px;
+    object-fit: contain;
+}
+
+/* Alphabet element styles */
+.alphabet-element {
+    position: absolute;
+    cursor: move;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.alphabet-element.selected {
+    border: 2px solid #4a90e2;
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+}
+
+.alphabet-element.locked {
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.alphabet-element.locked:hover {
+    opacity: 1;
+}
+
+.alphabet-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}
+*::-webkit-scrollbar {
+    display: none;
+}
+/* Back arrow button styling */
+.back-arrow {
+    background: none;
+    border: 2px solid #4a90e2;
+    font-size: 14px;
+    cursor: pointer;
+    color: #4a90e2;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-left: 60px;
+    margin-top: 5px;
+    transition: all 0.2s ease;
+    font-family: 'Finger Paint', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-arrow:hover {
+    background-color: #4a90e2;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.back-arrow:active {
+    transform: scale(0.98);
+}
+/* ...existing code... */
+
+/* Music Toggle Button */
+.music-toggle-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 2px solid #4a90e2;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #4a90e2;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.music-toggle-btn:hover {
+    background-color: #4a90e2;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.music-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+/* When music is muted, show different styling */
+.music-toggle-btn.muted {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.music-toggle-btn.muted:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Music attribution styling */
+.music-attribution {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 10px;
+    color: #666;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 5px 8px;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.music-attribution a {
+    color: #4a90e2;
+    text-decoration: none;
+}
+
+.music-attribution a:hover {
+    text-decoration: underline;
+}
