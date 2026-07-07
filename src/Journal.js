@@ -1536,7 +1536,7 @@ export function Journal() {
             <div className="polaroid-photo">
               <img
                 src={polaroid.uploadedImage}
-                alt="Uploaded Photo"
+                alt="User Upload"
                 className="uploaded-image"
               />
             </div>
