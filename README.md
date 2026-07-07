@@ -87,26 +87,6 @@ npm run build
 
 This generates an optimized build in the `build/` directory, ready for static hosting.
 
-## Deployment
-
-This project is a static single-page application and can be deployed to any static hosting provider, including:
-
-- GitHub Pages
-- Vercel
-- Netlify
-- DigitalOcean App Platform
-
-Ensure environment-specific ESLint rules pass (`npm run build` will fail on unresolved warnings in CI environments) before deploying.
-
-## Roadmap / Known Limitations
-
-- Scrapbook state is currently held in memory only and does not persist across page reloads or devices. Persisting entries (e.g. via `localStorage`, IndexedDB, or a backend service) is a planned improvement, particularly given the use of image uploads for polaroids.
-- Cross-device syncing would require a backend and authentication layer, which is not currently implemented.
-
 ## Attribution
 
 Background music: [Chilltape FM](https://pixabay.com/users/chilltapefm-51086477/) via [Pixabay](https://pixabay.com/).
-
-## License
-
-Specify your project's license here (e.g. MIT, ISC, or proprietary).
