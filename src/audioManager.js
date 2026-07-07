@@ -6,9 +6,10 @@ class AudioManager {
     this.audio.loop = true;
     this.audio.volume = 0.7;
     this.isPlaying = false;
+    this.userMuted = localStorage.getItem('scrapbook_music_muted') === 'true';
     this.listeners = new Set();
     
-    // Set up event listeners
+
     this.audio.addEventListener('play', () => {
       this.isPlaying = true;
       this.notifyListeners();
@@ -21,6 +22,9 @@ class AudioManager {
   }
   
   async play() {
+    if (this.userMuted) {
+  return false;
+}
     try {
       await this.audio.play();
       return true;
@@ -35,16 +39,19 @@ class AudioManager {
   }
   
   toggle() {
-    if (this.isPlaying) {
-      this.pause();
-    } else {
-      this.play();
-    }
+  if (this.isPlaying) {
+    this.userMuted = true;
+    localStorage.setItem('scrapbook_music_muted', 'true');
+    this.pause();
+  } else {
+    this.userMuted = false;
+    localStorage.setItem('scrapbook_music_muted', 'false');
+    this.play();
   }
-  
+}
   addListener(callback) {
     this.listeners.add(callback);
-    // Immediately notify about current state
+  
     callback(this.isPlaying);
   }
   

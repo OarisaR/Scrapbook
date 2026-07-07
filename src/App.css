@@ -879,69 +879,81 @@
 .back-arrow:active {
     transform: scale(0.98);
 }
-/* ...existing code... */
 
-/* Music Toggle Button */
 .music-toggle-btn {
     position: fixed;
     top: 20px;
     right: 20px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 2px solid #4a90e2;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    background-color: #eef5f0; /* soft mint-white, echoes journal cover */
+    border: 2.5px solid #7fa896; /* sage green from the journal cover */
+    border-radius: 52% 48% 47% 53% / 48% 53% 47% 52%;
+    width: 58px;
+    height: 58px;
     cursor: pointer;
     font-size: 18px;
-    color: #4a90e2;
-    transition: all 0.3s ease;
+    color: #d97a8c; /* dusty coral-pink, matches "Your Creative" text */
+    transition: transform 0.25s ease, background-color 0.25s ease;
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 3px 0px #a8c9b8;
+    transform: rotate(-3deg);
 }
 
 .music-toggle-btn:hover {
-    background-color: #4a90e2;
-    color: white;
-    transform: scale(1.1);
-    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    transform: rotate(2deg) scale(1.08);
+    background-color: #ffe8ec; /* soft blush pink on hover */
+    color: #c25a70;
 }
 
 .music-toggle-btn:active {
-    transform: scale(0.95);
+    transform: rotate(-1deg) scale(0.95);
+    box-shadow: 1px 2px 0px #a8c9b8;
 }
 
-/* When music is muted, show different styling */
+@keyframes doodle-wiggle {
+    0%, 100% { border-radius: 52% 48% 47% 53% / 48% 53% 47% 52%; }
+    50% { border-radius: 48% 52% 53% 47% / 52% 47% 53% 48%; }
+}
+
+.music-toggle-btn:hover {
+    animation: doodle-wiggle 1.2s ease-in-out infinite;
+}
+
 .music-toggle-btn.muted {
-    color: #dc3545;
-    border-color: #dc3545;
+    background-color: #e4ece7;
+    color: #9db3a8;
+    border-color: #a8c2b3;
 }
 
 .music-toggle-btn.muted:hover {
-    background-color: #dc3545;
-    color: white;
+    background-color: #d9e6de;
+    border-color: #7fa896;
+    color: #7f9a8c;
 }
 
-/* Music attribution styling */
 .music-attribution {
     position: fixed;
     bottom: 10px;
     right: 10px;
-    font-size: 10px;
-    color: #666;
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 5px 8px;
-    border-radius: 5px;
+    font-family: 'Finger Paint', cursive;
+    font-size: 9px;
+    color: #d97a8c;
+    background-color: #eef5f0;
+    padding: 6px 10px;
+    border: 2px solid #a8c9b8;
+    border-radius: 50% 10% 50% 10% / 10% 50% 10% 50%;
     z-index: 1000;
+    transform: rotate(1deg);
 }
 
 .music-attribution a {
-    color: #4a90e2;
-    text-decoration: none;
+    color: #c25a70;
+    text-decoration: underline;
+    font-weight: bold;
 }
 
 .music-attribution a:hover {
-    text-decoration: underline;
+    color: #7fa896; /* swaps to sage on hover, ties the two colors together */
 }

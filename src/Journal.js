@@ -60,9 +60,6 @@ export function Journal() {
     setShowDoodle(false); // Close doodle view when toggling main drawer
     setShowAlphabet(false); // Close alphabet view when toggling main drawer
   };
-  // Add this AFTER line 56 (after the existing useEffect(() => { saveToHistory(); }, []);)
-
-  // Music handling useEffect
   useEffect(() => {
     // Add listener to audio manager
     audioManager.addListener(setIsMusicPlaying);
@@ -72,7 +69,39 @@ export function Journal() {
       audioManager.removeListener(setIsMusicPlaying);
     };
   }, []);
+  useEffect(() => {
+    const currentState = {
+      stickyNotes,
+      textBoxes,
+      dateBoxes,
+      tapeElements,
+      polaroidElements,
+      backgroundElements,
+      doodleElements,
+      alphabetElements,
+      timestamp: Date.now(),
+    };
 
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(currentState);
+
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    }
+
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    stickyNotes,
+    textBoxes,
+    dateBoxes,
+    tapeElements,
+    polaroidElements,
+    backgroundElements,
+    doodleElements,
+    alphabetElements,
+  ]);
   const toggleMusic = () => {
     audioManager.toggle();
   };
@@ -91,16 +120,16 @@ export function Journal() {
 
     // Check if the SAME background already exists on both pages
     const existingLeftBg = backgroundElements.find(
-      (bg) => bg.type === backgroundName && bg.page === "left"
+      (bg) => bg.type === backgroundName && bg.page === "left",
     );
     const existingRightBg = backgroundElements.find(
-      (bg) => bg.type === backgroundName && bg.page === "right"
+      (bg) => bg.type === backgroundName && bg.page === "right",
     );
 
     if (existingLeftBg || existingRightBg) {
       // Remove existing backgrounds of the SAME type (toggle off)
       setBackgroundElements((prev) =>
-        prev.filter((bg) => bg.type !== backgroundName)
+        prev.filter((bg) => bg.type !== backgroundName),
       );
       setCurrentBackground(null);
     } else {
@@ -192,7 +221,6 @@ export function Journal() {
         setCurrentBackground(backgroundName);
       }
     }
-    saveToHistory();
   };
 
   // Handle back to main drawer
@@ -215,31 +243,31 @@ export function Journal() {
     console.log(`Selected doodle: ${doodleName}`);
 
     const newDoodle = {
-    id: Date.now(),
-    type: doodleName,
-    x: 400,
-    y: 250,
-    width: 100,
-    height: 100,
-    rotation: 0,
-    isLocked: false,
-    zIndex: Math.max(
-      ...stickyNotes.map((n) => n.zIndex || 0),
-      ...textBoxes.map((t) => t.zIndex || 0),
-      ...dateBoxes.map((d) => d.zIndex || 0),
-      ...tapeElements.map((t) => t.zIndex || 0),
-      ...polaroidElements.map((p) => p.zIndex || 0),
-      ...doodleElements.map((d) => d.zIndex || 0), // Include existing doodles
-      ...alphabetElements.map((a) => a.zIndex || 0), // Include alphabets
-      ...backgroundElements.map((bg) => bg.zIndex || 0),
-      1000 // Set a high minimum z-index for doodles
-    ) + 1, // Add 1 to ensure it's on top
-  };
+      id: Date.now(),
+      type: doodleName,
+      x: 400,
+      y: 250,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      isLocked: false,
+      zIndex:
+        Math.max(
+          ...stickyNotes.map((n) => n.zIndex || 0),
+          ...textBoxes.map((t) => t.zIndex || 0),
+          ...dateBoxes.map((d) => d.zIndex || 0),
+          ...tapeElements.map((t) => t.zIndex || 0),
+          ...polaroidElements.map((p) => p.zIndex || 0),
+          ...doodleElements.map((d) => d.zIndex || 0), // Include existing doodles
+          ...alphabetElements.map((a) => a.zIndex || 0), // Include alphabets
+          ...backgroundElements.map((bg) => bg.zIndex || 0),
+          1000, // Set a high minimum z-index for doodles
+        ) + 1, // Add 1 to ensure it's on top
+    };
 
     setDoodleElements([...doodleElements, newDoodle]);
     setSelectedItem(newDoodle.id);
     setSelectedItemType("doodle");
-    saveToHistory();
   };
 
   // Handle alphabet selection
@@ -247,32 +275,32 @@ export function Journal() {
     console.log(`Selected alphabet: ${alphabetData.name}`);
 
     const newAlphabet = {
-    id: Date.now(),
-    type: alphabetData.name,
-    number: alphabetData.number,
-    x: 400,
-    y: 250,
-    width: 80,
-    height: 80,
-    rotation: 0,
-    isLocked: false,
-    zIndex: Math.max(
-      ...stickyNotes.map((n) => n.zIndex || 0),
-      ...textBoxes.map((t) => t.zIndex || 0),
-      ...dateBoxes.map((d) => d.zIndex || 0),
-      ...tapeElements.map((t) => t.zIndex || 0),
-      ...polaroidElements.map((p) => p.zIndex || 0),
-      ...doodleElements.map((d) => d.zIndex || 0),
-      ...alphabetElements.map((a) => a.zIndex || 0), // Include existing alphabets
-      ...backgroundElements.map((bg) => bg.zIndex || 0),
-      2000 // Set an even higher minimum z-index for alphabets
-    ) + 1, // Add 1 to ensure it's on top
-  };
+      id: Date.now(),
+      type: alphabetData.name,
+      number: alphabetData.number,
+      x: 400,
+      y: 250,
+      width: 80,
+      height: 80,
+      rotation: 0,
+      isLocked: false,
+      zIndex:
+        Math.max(
+          ...stickyNotes.map((n) => n.zIndex || 0),
+          ...textBoxes.map((t) => t.zIndex || 0),
+          ...dateBoxes.map((d) => d.zIndex || 0),
+          ...tapeElements.map((t) => t.zIndex || 0),
+          ...polaroidElements.map((p) => p.zIndex || 0),
+          ...doodleElements.map((d) => d.zIndex || 0),
+          ...alphabetElements.map((a) => a.zIndex || 0), // Include existing alphabets
+          ...backgroundElements.map((bg) => bg.zIndex || 0),
+          2000, // Set an even higher minimum z-index for alphabets
+        ) + 1, // Add 1 to ensure it's on top
+    };
 
     setAlphabetElements([...alphabetElements, newAlphabet]);
     setSelectedItem(newAlphabet.id);
     setSelectedItemType("alphabet");
-    saveToHistory();
   };
 
   const toolIcons = [
@@ -289,35 +317,6 @@ export function Journal() {
     { name: "redo", icon: redo, label: "Redo" },
     { name: "trash", icon: trash, label: "Trash" },
   ];
-
-  // Save current state to history
-  const saveToHistory = () => {
-    const currentState = {
-      stickyNotes: [...stickyNotes],
-      textBoxes: [...textBoxes],
-      dateBoxes: [...dateBoxes],
-      tapeElements: [...tapeElements],
-      polaroidElements: [...polaroidElements],
-      backgroundElements: [...backgroundElements],
-      doodleElements: [...doodleElements],
-      alphabetElements: [...alphabetElements], // Add this
-      timestamp: Date.now(),
-    };
-
-    // Remove future history if we're not at the end
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(currentState);
-
-    // Limit history to 50 states
-    if (newHistory.length > 50) {
-      newHistory.shift();
-      setHistory(newHistory);
-      setHistoryIndex(newHistory.length - 1);
-    } else {
-      setHistory(newHistory);
-      setHistoryIndex(newHistory.length - 1);
-    }
-  };
 
   // Undo functionality
   const handleUndo = () => {
@@ -338,7 +337,7 @@ export function Journal() {
       // Update current background based on background elements
       const activeBg = (previousState.backgroundElements || []).find(
         (bg) =>
-          bg.type === "dot" || bg.type === "grid" || bg.type === "checkered"
+          bg.type === "dot" || bg.type === "grid" || bg.type === "checkered",
       );
       setCurrentBackground(activeBg ? activeBg.type : null);
     }
@@ -363,7 +362,7 @@ export function Journal() {
       // Update current background based on background elements
       const activeBg = (nextState.backgroundElements || []).find(
         (bg) =>
-          bg.type === "dot" || bg.type === "grid" || bg.type === "checkered"
+          bg.type === "dot" || bg.type === "grid" || bg.type === "checkered",
       );
       setCurrentBackground(activeBg ? activeBg.type : null);
     }
@@ -390,13 +389,12 @@ export function Journal() {
               ...textBoxes.map((t) => t.zIndex || 0),
               ...dateBoxes.map((d) => d.zIndex || 0),
               ...tapeElements.map((t) => t.zIndex || 0),
-              ...polaroidElements.map((p) => p.zIndex || 0)
+              ...polaroidElements.map((p) => p.zIndex || 0),
             ) + 1,
         };
         setPolaroidElements([...polaroidElements, newPolaroid]);
         setSelectedItem(newPolaroid.id);
         setSelectedItemType("polaroid");
-        saveToHistory();
       };
       reader.readAsDataURL(file);
     }
@@ -428,8 +426,8 @@ export function Journal() {
       boxes.map((box) =>
         box.id === textBoxId
           ? { ...box, isHighlighting: true, highlightProgress: 0 }
-          : box
-      )
+          : box,
+      ),
     );
 
     let progress = 0;
@@ -453,16 +451,16 @@ export function Journal() {
                     isHighlighting: false,
                     highlightProgress: 100,
                   }
-                : box
-            )
+                : box,
+            ),
           );
         }, 100);
       }
 
       setTextBoxes((boxes) =>
         boxes.map((box) =>
-          box.id === textBoxId ? { ...box, highlightProgress: progress } : box
-        )
+          box.id === textBoxId ? { ...box, highlightProgress: progress } : box,
+        ),
       );
     }, interval);
   };
@@ -478,8 +476,8 @@ export function Journal() {
               highlightProgress: 0,
               isHighlighted: false,
             }
-          : box
-      )
+          : box,
+      ),
     );
 
     let progress = 0;
@@ -503,16 +501,16 @@ export function Journal() {
                     isHighlighting: false,
                     highlightProgress: 100,
                   }
-                : box
-            )
+                : box,
+            ),
           );
         }, 100);
       }
 
       setDateBoxes((boxes) =>
         boxes.map((box) =>
-          box.id === dateBoxId ? { ...box, highlightProgress: progress } : box
-        )
+          box.id === dateBoxId ? { ...box, highlightProgress: progress } : box,
+        ),
       );
     }, interval);
   };
@@ -536,30 +534,30 @@ export function Journal() {
       return;
     }
 
- if (toolName === "sticky") {
-  setHighlighterMode(false);
-  const newNote = {
-    id: Date.now(),
-    x: 400,
-    y: 250,
-    width: 400,
-    height: 400,
-    rotation: 0,
-    isLocked: false,
-    zIndex: Math.max(
-      ...stickyNotes.map((n) => n.zIndex || 0),
-      ...textBoxes.map((t) => t.zIndex || 0),
-      ...dateBoxes.map((d) => d.zIndex || 0),
-      ...tapeElements.map((t) => t.zIndex || 0),
-      ...polaroidElements.map((p) => p.zIndex || 0),
-      100 // Base z-index for sticky notes
-    ) + 1,
-  };
-  setStickyNotes([...stickyNotes, newNote]);
-  setSelectedItem(newNote.id);
-  setSelectedItemType("sticky");
-  saveToHistory();
-} else if (toolName === "text") {
+    if (toolName === "sticky") {
+      setHighlighterMode(false);
+      const newNote = {
+        id: Date.now(),
+        x: 400,
+        y: 250,
+        width: 400,
+        height: 400,
+        rotation: 0,
+        isLocked: false,
+        zIndex:
+          Math.max(
+            ...stickyNotes.map((n) => n.zIndex || 0),
+            ...textBoxes.map((t) => t.zIndex || 0),
+            ...dateBoxes.map((d) => d.zIndex || 0),
+            ...tapeElements.map((t) => t.zIndex || 0),
+            ...polaroidElements.map((p) => p.zIndex || 0),
+            100, // Base z-index for sticky notes
+          ) + 1,
+      };
+      setStickyNotes([...stickyNotes, newNote]);
+      setSelectedItem(newNote.id);
+      setSelectedItemType("sticky");
+    } else if (toolName === "text") {
       setHighlighterMode(false);
       const newTextBox = {
         id: Date.now(),
@@ -582,14 +580,14 @@ export function Journal() {
             ...textBoxes.map((t) => t.zIndex || 0),
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
-            ...polaroidElements.map((p) => p.zIndex || 0)
-          ) + 1,
+            ...polaroidElements.map((p) => p.zIndex || 0),
+            0
+        ) + 1,
       };
       setTextBoxes([...textBoxes, newTextBox]);
       setSelectedItem(newTextBox.id);
       setSelectedItemType("text");
       setEditingText(newTextBox.id);
-      saveToHistory();
     } else if (toolName === "date") {
       setHighlighterMode(false);
       const newDateBox = {
@@ -613,13 +611,13 @@ export function Journal() {
             ...textBoxes.map((t) => t.zIndex || 0),
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
-            ...polaroidElements.map((p) => p.zIndex || 0)
+            ...polaroidElements.map((p) => p.zIndex || 0),
+            0
           ) + 1,
       };
       setDateBoxes([...dateBoxes, newDateBox]);
       setSelectedItem(newDateBox.id);
       setSelectedItemType("date");
-      saveToHistory();
     } else if (toolName === "tape") {
       setHighlighterMode(false);
       const newTape = {
@@ -636,13 +634,13 @@ export function Journal() {
             ...textBoxes.map((t) => t.zIndex || 0),
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
-            ...polaroidElements.map((p) => p.zIndex || 0)
+            ...polaroidElements.map((p) => p.zIndex || 0),
+            0,
           ) + 1,
       };
       setTapeElements([...tapeElements, newTape]);
       setSelectedItem(newTape.id);
       setSelectedItemType("tape");
-      saveToHistory();
     } else if (toolName === "polaroid") {
       setHighlighterMode(false);
       // Trigger file input
@@ -667,31 +665,31 @@ export function Journal() {
           setDateBoxes((boxes) => boxes.filter((b) => b.id !== selectedItem));
         } else if (selectedItemType === "tape") {
           setTapeElements((elements) =>
-            elements.filter((e) => e.id !== selectedItem)
+            elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "polaroid") {
           setPolaroidElements((elements) =>
-            elements.filter((e) => e.id !== selectedItem)
+            elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "doodle") {
           setDoodleElements((elements) =>
-            elements.filter((e) => e.id !== selectedItem)
+            elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "alphabet") {
           // Add this
           setAlphabetElements((elements) =>
-            elements.filter((e) => e.id !== selectedItem)
+            elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "background") {
           // Handle both individual and dual background deletion
           if (selectedItem.includes("-both")) {
             const bgType = selectedItem.replace("-both", "");
             setBackgroundElements((elements) =>
-              elements.filter((e) => e.type !== bgType)
+              elements.filter((e) => e.type !== bgType),
             );
           } else {
             setBackgroundElements((elements) =>
-              elements.filter((e) => e.id !== selectedItem)
+              elements.filter((e) => e.id !== selectedItem),
             );
           }
           setCurrentBackground(null);
@@ -699,7 +697,7 @@ export function Journal() {
         setSelectedItem(null);
         setSelectedItemType(null);
         setEditingText(null);
-        saveToHistory();
+  
       }
     } else {
       setHighlighterMode(false);
@@ -735,7 +733,7 @@ export function Journal() {
       if (clickedBg) {
         // Find both left and right backgrounds of the same type
         const sameBgs = backgroundElements.filter(
-          (bg) => bg.type === clickedBg.type
+          (bg) => bg.type === clickedBg.type,
         );
         if (sameBgs.length === 2) {
           // Select both backgrounds by using a special identifier
@@ -800,15 +798,15 @@ export function Journal() {
         items.map((i) =>
           i.id === itemId
             ? { ...i, x: e.clientX - startX, y: e.clientY - startY }
-            : i
-        )
+            : i,
+        ),
       );
     };
 
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      saveToHistory();
+     
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -829,20 +827,20 @@ export function Journal() {
 
   const handleTextChange = (textId, newText) => {
     setTextBoxes((boxes) =>
-      boxes.map((box) => (box.id === textId ? { ...box, text: newText } : box))
+      boxes.map((box) => (box.id === textId ? { ...box, text: newText } : box)),
     );
   };
 
   const handleTextBlur = () => {
     setEditingText(null);
-    saveToHistory();
+  
   };
 
   const handleTextKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       setEditingText(null);
-      saveToHistory();
+  
     }
   };
 
@@ -880,7 +878,7 @@ export function Journal() {
       else if (itemType === "tape") setItems = setTapeElements;
       else if (itemType === "polaroid") setItems = setPolaroidElements;
       else if (itemType === "doodle") setItems = setDoodleElements;
-      else if (itemType === "alphabet") setItems = setAlphabetElements; // Add this
+      else if (itemType === "alphabet") setItems = setAlphabetElements;
 
       setItems((items) =>
         items.map((i) => {
@@ -937,7 +935,7 @@ export function Journal() {
               const widthRatio = newWidth / startWidth;
               const newFontSize = Math.max(
                 10,
-                Math.min(36, originalFontSize * widthRatio)
+                Math.min(36, originalFontSize * widthRatio),
               );
               return {
                 ...i,
@@ -951,14 +949,14 @@ export function Journal() {
             return { ...i, width: newWidth, height: newHeight };
           }
           return i;
-        })
+        }),
       );
     };
 
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      saveToHistory();
+
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -1001,15 +999,14 @@ export function Journal() {
 
       setItems((items) =>
         items.map((i) =>
-          i.id === itemId ? { ...i, rotation: startRotation + deltaAngle } : i
-        )
+          i.id === itemId ? { ...i, rotation: startRotation + deltaAngle } : i,
+        ),
       );
     };
 
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      saveToHistory();
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -1022,52 +1019,51 @@ export function Journal() {
       if (selectedItemType === "sticky") {
         setStickyNotes((notes) =>
           notes.map((n) =>
-            n.id === selectedItem ? { ...n, isLocked: true } : n
-          )
+            n.id === selectedItem ? { ...n, isLocked: true } : n,
+          ),
         );
       } else if (selectedItemType === "text") {
         setTextBoxes((boxes) =>
           boxes.map((b) =>
-            b.id === selectedItem ? { ...b, isLocked: true } : b
-          )
+            b.id === selectedItem ? { ...b, isLocked: true } : b,
+          ),
         );
       } else if (selectedItemType === "date") {
         setDateBoxes((boxes) =>
           boxes.map((b) =>
-            b.id === selectedItem ? { ...b, isLocked: true } : b
-          )
+            b.id === selectedItem ? { ...b, isLocked: true } : b,
+          ),
         );
       } else if (selectedItemType === "tape") {
         setTapeElements((elements) =>
           elements.map((e) =>
-            e.id === selectedItem ? { ...e, isLocked: true } : e
-          )
+            e.id === selectedItem ? { ...e, isLocked: true } : e,
+          ),
         );
       } else if (selectedItemType === "polaroid") {
         setPolaroidElements((elements) =>
           elements.map((e) =>
-            e.id === selectedItem ? { ...e, isLocked: true } : e
-          )
+            e.id === selectedItem ? { ...e, isLocked: true } : e,
+          ),
         );
       } else if (selectedItemType === "doodle") {
         setDoodleElements((elements) =>
           elements.map((e) =>
-            e.id === selectedItem ? { ...e, isLocked: true } : e
-          )
+            e.id === selectedItem ? { ...e, isLocked: true } : e,
+          ),
         );
       } else if (selectedItemType === "alphabet") {
         // Add this
         setAlphabetElements((elements) =>
           elements.map((e) =>
-            e.id === selectedItem ? { ...e, isLocked: true } : e
-          )
+            e.id === selectedItem ? { ...e, isLocked: true } : e,
+          ),
         );
       }
     }
     setSelectedItem(null);
     setSelectedItemType(null);
     setEditingText(null);
-    saveToHistory();
   };
 
   // Click outside to deselect
@@ -1083,11 +1079,6 @@ export function Journal() {
       setHighlighterMode(false);
     }
   };
-
-  // Initialize history on component mount
-  useEffect(() => {
-    saveToHistory();
-  }, []);
 
   return (
     <div className="image-container" onClick={handleContainerClick}>
@@ -1174,10 +1165,10 @@ export function Journal() {
                 bgElement.type === "dot"
                   ? require("./images/e_dot.png")
                   : bgElement.type === "grid"
-                  ? require("./images/e_grid.png")
-                  : bgElement.type === "checkered"
-                  ? require("./images/e_checkered.png")
-                  : ""
+                    ? require("./images/e_grid.png")
+                    : bgElement.type === "checkered"
+                      ? require("./images/e_checkered.png")
+                      : ""
               }
               alt={`${bgElement.type} pattern`}
               style={{
@@ -1269,7 +1260,7 @@ export function Journal() {
           } ${textBox.isLocked ? "locked" : ""} ${
             textBox.isHighlighted ? "highlighted" : ""
           } ${textBox.isHighlighting ? "highlighting" : ""} ${getPositionClass(
-            textBox
+            textBox,
           )}`}
           style={{
             left: `${textBox.x}px`,
@@ -1281,8 +1272,8 @@ export function Journal() {
             cursor: highlighterMode
               ? "crosshair"
               : textBox.isLocked
-              ? "pointer"
-              : "move",
+                ? "pointer"
+                : "move",
           }}
           onMouseDown={(e) => handleItemMouseDown(e, textBox.id, "text")}
           onDoubleClick={() => handleTextDoubleClick(textBox.id)}
@@ -1376,7 +1367,7 @@ export function Journal() {
           } ${dateBox.isLocked ? "locked" : ""} ${
             dateBox.isHighlighted ? "highlighted" : ""
           } ${dateBox.isHighlighting ? "highlighting" : ""} ${getPositionClass(
-            dateBox
+            dateBox,
           )}`}
           style={{
             left: `${dateBox.x}px`,
@@ -1388,8 +1379,8 @@ export function Journal() {
             cursor: highlighterMode
               ? "crosshair"
               : dateBox.isLocked
-              ? "pointer"
-              : "move", // Add crosshair cursor for highlighter mode
+                ? "pointer"
+                : "move", // Add crosshair cursor for highlighter mode
           }}
           onMouseDown={(e) => handleItemMouseDown(e, dateBox.id, "date")}
         >
