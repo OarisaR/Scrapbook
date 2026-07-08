@@ -141,12 +141,6 @@
    height: 180px;
 }
 
-/* Z-Index Hierarchy */
-/* Base elements: 100-199 */
-/* Interactive elements: 200-299 */
-/* Overlays and controls: 1000+ */
-
-/* Sticky Note Styles */
 .sticky-note {
     position: absolute;
     cursor: move;
@@ -177,6 +171,7 @@
     height: 100%;
     object-fit: contain;
     pointer-events: none;
+    transform: scale(1.4);
 }
 
 /* Text Box Styles */
@@ -484,8 +479,8 @@
 /* Rotation Handle - High z-index for interaction */
 .rotate-handle {
     position: absolute;
-    top: -16px;
-    right: 20px;
+    top: -10px;
+    right: -6px;
     width: 16px;
     height: 16px;
     background: #ff6b6b;
@@ -514,8 +509,8 @@
 /* Confirm Handle - High z-index for interaction */
 .confirm-handle {
     position: absolute;
-    top: -16px;
-    left: 4px;
+    top: -10px;
+    left: -5px;
     width: 16px;
     height: 16px;
     background: #28a745;
@@ -540,18 +535,24 @@
 /* Highlighter Mode Indicator - Very high z-index */
 .highlighter-indicator {
     position: fixed;
-    top: 20px;
-    left: 50%;
+    top: 15px;
+    left: 52%;
     transform: translateX(-50%);
-    background: #fff16e;
-    color: #000000;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(180deg, rgba(246, 242, 230, 0.98) 0%, rgba(219, 227, 236, 0.98) 100%);
+    color: #3f5568;
+    padding: 10px 18px;
+    border-radius: 18px;
+    border: 2px solid #4379a4;
+    font-family: 'Finger Paint', cursive;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    box-shadow:
+        0 6px 14px rgba(0, 0, 0, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
     z-index: 2000; /* Always visible */
     pointer-events: none;
+    backdrop-filter: blur(2px);
 }
 
 /* Active highlighter tool styling */
@@ -852,32 +853,34 @@
 }
 /* Back arrow button styling */
 .back-arrow {
-    background: none;
-    border: 2px solid #4a90e2;
-    font-size: 14px;
+    background-color: #eef5f0; /* soft mint-white, echoes journal cover */
+    border: 2px solid #7fa896; /* sage green from the journal cover */
+    font-size: 13px;
     cursor: pointer;
-    color: #4a90e2;
-    font-weight: bold;
-    padding: 8px 12px;
-    border-radius: 8px;
+    color: #c25a70; /* dusty coral-pink, matches the scrapbook accent palette */
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 18px 10px 16px 12px;
     margin-left: 60px;
     margin-top: 5px;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
     font-family: 'Finger Paint', sans-serif;
     display: flex;
     align-items: center;
     gap: 5px;
+    box-shadow: 2px 3px 0px #a8c9b8;
 }
 
 .back-arrow:hover {
-    background-color: #4a90e2;
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    background-color: #ffe8ec; /* soft blush pink on hover */
+    color: #7fa896;
+    transform: rotate(-1deg) translateY(-1px) scale(1.03);
+    box-shadow: 3px 4px 0px #93b7a4;
 }
 
 .back-arrow:active {
-    transform: scale(0.98);
+    transform: rotate(0deg) translateY(1px) scale(0.98);
+    box-shadow: 1px 2px 0px #a8c9b8;
 }
 
 .music-toggle-btn {
@@ -956,4 +959,151 @@
 
 .music-attribution a:hover {
     color: #7fa896; /* swaps to sage on hover, ties the two colors together */
+}
+.snapshot-btn {
+    position: fixed;
+    top: 90px; /* sits just below the music button */
+    right: 20px;
+    background-color: #eef5f0;
+    border: 2.5px solid #7fa896;
+    border-radius: 52% 48% 47% 53% / 48% 53% 47% 52%;
+    width: 58px;
+    height: 58px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #d97a8c;
+    transition: transform 0.25s ease, background-color 0.25s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 3px 0px #a8c9b8;
+    transform: rotate(3deg);
+}
+
+.snapshot-btn:hover {
+    animation: doodle-wiggle 1.2s ease-in-out infinite;
+    background-color: #ffe8ec;
+    color: #c25a70;
+    transform: rotate(-2deg) scale(1.08);
+}
+
+.snapshot-btn:active {
+    transform: rotate(1deg) scale(0.95);
+    box-shadow: 1px 2px 0px #a8c9b8;
+}
+.save-page-btn {
+    position: fixed;
+    top: 160px; /* sits below music button + snapshot button */
+    right: 20px;
+    background-color: #eef5f0;
+    border: 2.5px solid #7fa896;
+    border-radius: 52% 48% 47% 53% / 48% 53% 47% 52%;
+    width: 58px;
+    height: 58px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #d97a8c;
+    transition: transform 0.25s ease, background-color 0.25s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 3px 0px #a8c9b8;
+    transform: rotate(-2deg);
+}
+
+.save-page-btn:hover {
+    animation: doodle-wiggle 1.2s ease-in-out infinite;
+    background-color: #ffe8ec;
+    color: #c25a70;
+    transform: rotate(2deg) scale(1.08);
+}
+
+.save-page-btn:active {
+    transform: rotate(-1deg) scale(0.95);
+    box-shadow: 1px 2px 0px #a8c9b8;
+}
+
+.page-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 52%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background-color: #eef5f0;
+    border: 2px solid #7fa896;
+    border-radius: 30px;
+    padding: 8px 16px;
+    z-index: 1000;
+    box-shadow: 2px 3px 0px #a8c9b8;
+}
+
+.page-nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    color: #e45474;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+    transform: scale(1.15);
+}
+
+.page-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.page-nav-label {
+    font-family: 'Finger Paint', cursive;
+    font-size: 13px;
+    color: #3f5568;
+    min-width: 40px;
+    text-align: center;
+}
+.delete-page-btn {
+    position: fixed;
+    top: 230px; /* sits below music, snapshot, and save buttons */
+    right: 20px;
+    background-color: #eef5f0;
+    border: 2.5px solid #c97a7a;
+    border-radius: 52% 48% 47% 53% / 48% 53% 47% 52%;
+    width: 58px;
+    height: 58px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #c25a70;
+    transition: transform 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 3px 0px #d4a3a3;
+    transform: rotate(2deg);
+}
+
+.delete-page-btn:hover:not(:disabled) {
+    animation: doodle-wiggle 1.2s ease-in-out infinite;
+    background-color: #ffdcdc;
+    color: #a8324a;
+    transform: rotate(-2deg) scale(1.08);
+}
+
+.delete-page-btn:active:not(:disabled) {
+    transform: rotate(1deg) scale(0.95);
+    box-shadow: 1px 2px 0px #d4a3a3;
+}
+
+.delete-page-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
 }

@@ -43,6 +43,7 @@ class AudioManager {
     this.userMuted = true;
     localStorage.setItem('scrapbook_music_muted', 'true');
     this.pause();
+    this.notifyListeners(); // force sync
   } else {
     this.userMuted = false;
     localStorage.setItem('scrapbook_music_muted', 'false');

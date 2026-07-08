@@ -1,42 +1,34 @@
 import React, { useState, useRef, useEffect } from "react";
 import journal1 from "./images/journal1.png";
 import notebook from "./images/notebook.png";
-import e_note from "./images/e_note.png";
-import e_tape from "./images/e_tape.png";
-import { Background } from "./Background"; // Import Background component
-import { Doodle } from "./Doodle"; // Import Doodle component
-import { Alphabet } from "./Alphabet"; // Import Alphabet component
 import "./App.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { audioManager } from "./audioManager";
 import clickSound from "./pop.mp3";
-// Import all the tool icons
-import sticky from "./images/stickynote.png";
-import bg from "./images/bg.png";
-import color from "./images/45.png";
-import doodle from "./images/doodle.png";
-import highlighter from "./images/highlighter.png";
-import date from "./images/date.png";
-import polaroid from "./images/polaroid.png";
-import tape from "./images/tape.png";
-import text from "./images/text.png";
-import undo from "./images/undo.png";
-import redo from "./images/redo.png";
-import trash from "./images/trash.png";
-
+import html2canvas from "html2canvas";
+import { StickyNote } from "./components/StickyNote";
+import { TextBox } from "./components/TextBox";
+import { DateBox } from "./components/DateBox";
+import { TapeElement } from "./components/TapeElement";
+import { PolaroidElement } from "./components/PolaroidElement";
+import { DoodleElement } from "./components/DoodleElement";
+import { AlphabetElement } from "./components/AlphabetElement";
+import { BackgroundElement } from "./components/BackgroundElement";
+import { Toolbar } from "./components/Toolbar";
+import { getAllPages, savePageToDB, deletePageFromDB } from "./db";
 export function Journal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [showBackground, setShowBackground] = useState(false); // New state for background view
-  const [showDoodle, setShowDoodle] = useState(false); // New state for doodle view
-  const [showAlphabet, setShowAlphabet] = useState(false); // New state for alphabet view
+  const [showBackground, setShowBackground] = useState(false);
+  const [showDoodle, setShowDoodle] = useState(false);
+  const [showAlphabet, setShowAlphabet] = useState(false);
 
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [dateBoxes, setDateBoxes] = useState([]);
   const [tapeElements, setTapeElements] = useState([]);
-  const [polaroidElements, setPolaroidElements] = useState([]); // New state for polaroid elements
-  const [doodleElements, setDoodleElements] = useState([]); // New state for doodle elements
-  const [alphabetElements, setAlphabetElements] = useState([]); // New state for alphabet elements
+  const [polaroidElements, setPolaroidElements] = useState([]);
+  const [doodleElements, setDoodleElements] = useState([]);
+  const [alphabetElements, setAlphabetElements] = useState([]);
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemType, setSelectedItemType] = useState(null);
@@ -44,53 +36,57 @@ export function Journal() {
   const [editingText, setEditingText] = useState(null);
   const [highlighterMode, setHighlighterMode] = useState(false);
 
-  // Undo/Redo functionality
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // File input ref for polaroid upload
   const fileInputRef = useRef(null);
+  const journalRef = useRef(null); // add this
   const [currentBackground, setCurrentBackground] = useState(null);
-  const [backgroundElements, setBackgroundElements] = useState([]); // Add this for background management
+  const [backgroundElements, setBackgroundElements] = useState([]);
 
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const isRestoringHistoryRef = useRef(false);
+  const [pages, setPages] = useState([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
-    setShowBackground(false); // Close background view when toggling main drawer
-    setShowDoodle(false); // Close doodle view when toggling main drawer
-    setShowAlphabet(false); // Close alphabet view when toggling main drawer
+    setShowBackground(false);
+    setShowDoodle(false);
+    setShowAlphabet(false);
   };
+
   useEffect(() => {
-    // Add listener to audio manager
-    audioManager.addListener(setIsMusicPlaying);
-
-    // Cleanup
-    return () => {
-      audioManager.removeListener(setIsMusicPlaying);
-    };
-  }, []);
-  useEffect(() => {
-    const currentState = {
-      stickyNotes,
-      textBoxes,
-      dateBoxes,
-      tapeElements,
-      polaroidElements,
-      backgroundElements,
-      doodleElements,
-      alphabetElements,
-      timestamp: Date.now(),
-    };
-
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(currentState);
-
-    if (newHistory.length > 50) {
-      newHistory.shift();
+    if (isRestoringHistoryRef.current) {
+      isRestoringHistoryRef.current = false;
+      return;
     }
 
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+    const timeoutId = setTimeout(() => {
+      const currentState = {
+        stickyNotes,
+        textBoxes,
+        dateBoxes,
+        tapeElements,
+        polaroidElements,
+        backgroundElements,
+        doodleElements,
+        alphabetElements,
+        timestamp: Date.now(),
+      };
+
+      setHistory((prevHistory) => {
+        setHistoryIndex((prevIndex) => {
+          const newHistory = prevHistory.slice(0, prevIndex + 1);
+          newHistory.push(currentState);
+          if (newHistory.length > 50) newHistory.shift();
+          setHistory(newHistory);
+          return newHistory.length - 1;
+        });
+        return prevHistory;
+      });
+    }, 400); // waits for interaction to pause before saving a snapshot
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     stickyNotes,
@@ -102,23 +98,73 @@ export function Journal() {
     doodleElements,
     alphabetElements,
   ]);
+
   const toggleMusic = () => {
     audioManager.toggle();
   };
+  // In your Journal component, add this useEffect:
+useEffect(() => {
+  const handleMusicState = (playing) => {
+    setIsMusicPlaying(playing);
+  };
+  
+  audioManager.addListener(handleMusicState);
+  
+  // Also sync initial state in case audio is already playing
+  setIsMusicPlaying(audioManager.isPlaying);
+  
+  return () => {
+    audioManager.removeListener(handleMusicState);
+  };
+}, []);
+  const handleDownloadSnapshot = () => {
+    // Deselect anything and close the drawer so the snapshot is clean
+    setSelectedItem(null);
+    setSelectedItemType(null);
+    setEditingText(null);
+    setIsOpen(false);
+    setShowBackground(false);
+    setShowDoodle(false);
+    setShowAlphabet(false);
+
+    // Wait a tick for the UI to re-render without handles/drawer before capturing
+    setTimeout(() => {
+      html2canvas(journalRef.current, {
+        useCORS: true,
+        backgroundColor: null,
+        scale: 2, // sharper output
+      }).then((canvas) => {
+        const link = document.createElement("a");
+        link.download = `my-scrapbook-${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }, 150);
+  };
+
   const playClickSound = () => {
     try {
       const audio = new Audio(clickSound);
-      audio.volume = 1; // Adjust volume as needed
+      audio.volume = 1;
       audio.play().catch(console.log);
     } catch (error) {
       console.log("Click sound failed:", error);
     }
   };
-  // Handle background selection - update this function
+  useEffect(() => {
+    (async () => {
+      try {
+        const fetchedPages = await getAllPages();
+        setPages(fetchedPages);
+        setCurrentPageIndex(fetchedPages.length); // opens on a fresh blank page
+      } catch (err) {
+        console.error("Failed to load saved pages:", err);
+      }
+    })();
+  }, []);
   const handleBackgroundSelect = (backgroundName) => {
     console.log(`Selected background: ${backgroundName}`);
 
-    // Check if the SAME background already exists on both pages
     const existingLeftBg = backgroundElements.find(
       (bg) => bg.type === backgroundName && bg.page === "left",
     );
@@ -127,16 +173,13 @@ export function Journal() {
     );
 
     if (existingLeftBg || existingRightBg) {
-      // Remove existing backgrounds of the SAME type (toggle off)
       setBackgroundElements((prev) =>
         prev.filter((bg) => bg.type !== backgroundName),
       );
       setCurrentBackground(null);
     } else {
-      // Remove ALL existing backgrounds first, then add new ones
-      setBackgroundElements([]); // Clear all backgrounds first
+      setBackgroundElements([]);
 
-      // Add new backgrounds to both pages
       let leftBackground, rightBackground;
 
       if (backgroundName === "dot") {
@@ -223,22 +266,18 @@ export function Journal() {
     }
   };
 
-  // Handle back to main drawer
   const handleBackToMain = () => {
     setShowBackground(false);
   };
 
-  // Handle back to main drawer from doodle
   const handleBackFromDoodle = () => {
     setShowDoodle(false);
   };
 
-  // Handle back to main drawer from alphabet
   const handleBackFromAlphabet = () => {
     setShowAlphabet(false);
   };
 
-  // Handle doodle selection
   const handleDoodleSelect = (doodleName) => {
     console.log(`Selected doodle: ${doodleName}`);
 
@@ -258,11 +297,11 @@ export function Journal() {
           ...dateBoxes.map((d) => d.zIndex || 0),
           ...tapeElements.map((t) => t.zIndex || 0),
           ...polaroidElements.map((p) => p.zIndex || 0),
-          ...doodleElements.map((d) => d.zIndex || 0), // Include existing doodles
-          ...alphabetElements.map((a) => a.zIndex || 0), // Include alphabets
+          ...doodleElements.map((d) => d.zIndex || 0),
+          ...alphabetElements.map((a) => a.zIndex || 0),
           ...backgroundElements.map((bg) => bg.zIndex || 0),
-          1000, // Set a high minimum z-index for doodles
-        ) + 1, // Add 1 to ensure it's on top
+          1000,
+        ) + 1,
     };
 
     setDoodleElements([...doodleElements, newDoodle]);
@@ -270,7 +309,6 @@ export function Journal() {
     setSelectedItemType("doodle");
   };
 
-  // Handle alphabet selection
   const handleAlphabetSelect = (alphabetData) => {
     console.log(`Selected alphabet: ${alphabetData.name}`);
 
@@ -292,10 +330,10 @@ export function Journal() {
           ...tapeElements.map((t) => t.zIndex || 0),
           ...polaroidElements.map((p) => p.zIndex || 0),
           ...doodleElements.map((d) => d.zIndex || 0),
-          ...alphabetElements.map((a) => a.zIndex || 0), // Include existing alphabets
+          ...alphabetElements.map((a) => a.zIndex || 0),
           ...backgroundElements.map((bg) => bg.zIndex || 0),
-          2000, // Set an even higher minimum z-index for alphabets
-        ) + 1, // Add 1 to ensure it's on top
+          2000,
+        ) + 1,
     };
 
     setAlphabetElements([...alphabetElements, newAlphabet]);
@@ -303,25 +341,10 @@ export function Journal() {
     setSelectedItemType("alphabet");
   };
 
-  const toolIcons = [
-    { name: "sticky", icon: sticky, label: "Sticky Note" },
-    { name: "bg", icon: bg, label: "Background" },
-    { name: "color", icon: color, label: "Alphabets" },
-    { name: "doodle", icon: doodle, label: "Doodle" },
-    { name: "highlighter", icon: highlighter, label: "Highlighter" },
-    { name: "date", icon: date, label: "Date" },
-    { name: "polaroid", icon: polaroid, label: "Polaroid" },
-    { name: "tape", icon: tape, label: "Tape" },
-    { name: "text", icon: text, label: "Text" },
-    { name: "undo", icon: undo, label: "Undo" },
-    { name: "redo", icon: redo, label: "Redo" },
-    { name: "trash", icon: trash, label: "Trash" },
-  ];
-
-  // Undo functionality
   const handleUndo = () => {
     if (historyIndex > 0) {
       const previousState = history[historyIndex - 1];
+      isRestoringHistoryRef.current = true;
       setStickyNotes(previousState.stickyNotes);
       setTextBoxes(previousState.textBoxes);
       setDateBoxes(previousState.dateBoxes);
@@ -329,12 +352,11 @@ export function Journal() {
       setPolaroidElements(previousState.polaroidElements);
       setBackgroundElements(previousState.backgroundElements || []);
       setDoodleElements(previousState.doodleElements || []);
-      setAlphabetElements(previousState.alphabetElements || []); // Add this
+      setAlphabetElements(previousState.alphabetElements || []);
       setHistoryIndex(historyIndex - 1);
       setSelectedItem(null);
       setSelectedItemType(null);
       setEditingText(null);
-      // Update current background based on background elements
       const activeBg = (previousState.backgroundElements || []).find(
         (bg) =>
           bg.type === "dot" || bg.type === "grid" || bg.type === "checkered",
@@ -343,10 +365,10 @@ export function Journal() {
     }
   };
 
-  // Redo functionality
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const nextState = history[historyIndex + 1];
+      isRestoringHistoryRef.current = true;
       setStickyNotes(nextState.stickyNotes);
       setTextBoxes(nextState.textBoxes);
       setDateBoxes(nextState.dateBoxes);
@@ -354,12 +376,11 @@ export function Journal() {
       setPolaroidElements(nextState.polaroidElements);
       setBackgroundElements(nextState.backgroundElements || []);
       setDoodleElements(nextState.doodleElements || []);
-      setAlphabetElements(nextState.alphabetElements || []); // Add this
+      setAlphabetElements(nextState.alphabetElements || []);
       setHistoryIndex(historyIndex + 1);
       setSelectedItem(null);
       setSelectedItemType(null);
       setEditingText(null);
-      // Update current background based on background elements
       const activeBg = (nextState.backgroundElements || []).find(
         (bg) =>
           bg.type === "dot" || bg.type === "grid" || bg.type === "checkered",
@@ -368,7 +389,6 @@ export function Journal() {
     }
   };
 
-  // Handle file upload for polaroid
   const handlePolaroidUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -379,8 +399,8 @@ export function Journal() {
           x: 300,
           y: 200,
           width: 200,
-          height: 240, // Slightly taller for polaroid proportions
-          rotation: Math.random() * 20 - 10, // Random slight rotation
+          height: 240,
+          rotation: Math.random() * 20 - 10,
           isLocked: false,
           uploadedImage: e.target.result,
           zIndex:
@@ -398,11 +418,9 @@ export function Journal() {
       };
       reader.readAsDataURL(file);
     }
-    // Reset file input
     event.target.value = "";
   };
 
-  // Function to get today's date in dd.mm.yyyy format
   const getTodaysDate = () => {
     const today = new Date();
     const day = String(today.getDate()).padStart(2, "0");
@@ -410,8 +428,118 @@ export function Journal() {
     const year = today.getFullYear();
     return `${day}.${month}.${year}`;
   };
+  const blankPageState = () => ({
+    stickyNotes: [],
+    textBoxes: [],
+    dateBoxes: [],
+    tapeElements: [],
+    polaroidElements: [],
+    backgroundElements: [],
+    doodleElements: [],
+    alphabetElements: [],
+    currentBackground: null,
+  });
 
-  // Function to determine if element is near screen edges
+  const applyPageState = (state) => {
+    isRestoringHistoryRef.current = true;
+    setStickyNotes(state.stickyNotes || []);
+    setTextBoxes(state.textBoxes || []);
+    setDateBoxes(state.dateBoxes || []);
+    setTapeElements(state.tapeElements || []);
+    setPolaroidElements(state.polaroidElements || []);
+    setBackgroundElements(state.backgroundElements || []);
+    setDoodleElements(state.doodleElements || []);
+    setAlphabetElements(state.alphabetElements || []);
+    setCurrentBackground(state.currentBackground || null);
+    setSelectedItem(null);
+    setSelectedItemType(null);
+    setEditingText(null);
+    setHistory([{ ...state, timestamp: Date.now() }]);
+    setHistoryIndex(0);
+  };
+
+  const handleSavePage = async () => {
+    const pageData = {
+      id:
+        currentPageIndex < pages.length
+          ? pages[currentPageIndex].id
+          : `page-${Date.now()}`,
+      stickyNotes,
+      textBoxes,
+      dateBoxes,
+      tapeElements,
+      polaroidElements,
+      backgroundElements,
+      doodleElements,
+      alphabetElements,
+      currentBackground,
+      savedAt: Date.now(),
+    };
+
+    try {
+      await savePageToDB(pageData);
+      setPages((prevPages) => {
+        if (currentPageIndex < prevPages.length) {
+          const updated = [...prevPages];
+          updated[currentPageIndex] = pageData;
+          return updated;
+        }
+        return [...prevPages, pageData];
+      });
+    } catch (err) {
+      console.error("Failed to save page:", err);
+    }
+  };
+  const handleDeletePage = async () => {
+    if (currentPageIndex >= pages.length) return; // nothing to delete on a blank page
+
+    const confirmed = window.confirm("Delete this page? This can't be undone.");
+    if (!confirmed) return;
+
+    const pageToDelete = pages[currentPageIndex];
+
+    try {
+      await deletePageFromDB(pageToDelete.id);
+
+      const newPages = pages.filter((_, idx) => idx !== currentPageIndex);
+      setPages(newPages);
+
+      let newIndex;
+      if (newPages.length === 0) {
+        newIndex = 0;
+        applyPageState(blankPageState());
+      } else if (currentPageIndex < newPages.length) {
+        newIndex = currentPageIndex;
+        applyPageState(newPages[newIndex]);
+      } else {
+        newIndex = newPages.length - 1;
+        applyPageState(newPages[newIndex]);
+      }
+
+      setCurrentPageIndex(newIndex);
+    } catch (err) {
+      console.error("Failed to delete page:", err);
+    }
+  };
+  const handlePreviousPage = () => {
+    if (currentPageIndex > 0) {
+      const prevIndex = currentPageIndex - 1;
+      applyPageState(pages[prevIndex]);
+      setCurrentPageIndex(prevIndex);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPageIndex < pages.length) {
+      const nextIndex = currentPageIndex + 1;
+      if (nextIndex === pages.length) {
+        applyPageState(blankPageState());
+      } else {
+        applyPageState(pages[nextIndex]);
+      }
+      setCurrentPageIndex(nextIndex);
+    }
+  };
   const getPositionClass = (item) => {
     let classes = [];
     if (item.y < 50) classes.push("near-top");
@@ -420,7 +548,6 @@ export function Journal() {
     return classes.join(" ");
   };
 
-  // Highlighter animation function
   const animateHighlight = (textBoxId) => {
     setTextBoxes((boxes) =>
       boxes.map((box) =>
@@ -465,7 +592,6 @@ export function Journal() {
     }, interval);
   };
 
-  // Highlighter animation function for date elements
   const animateHighlightDate = (dateBoxId) => {
     setDateBoxes((boxes) =>
       boxes.map((box) =>
@@ -517,19 +643,16 @@ export function Journal() {
 
   const handleToolClick = (toolName) => {
     if (toolName === "bg") {
-      // Show background options instead of main drawer tools
       setShowBackground(true);
       return;
     }
 
     if (toolName === "doodle") {
-      // Show doodle options instead of main drawer tools
       setShowDoodle(true);
       return;
     }
 
     if (toolName === "color") {
-      // Show alphabet options instead of main drawer tools
       setShowAlphabet(true);
       return;
     }
@@ -551,7 +674,7 @@ export function Journal() {
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
             ...polaroidElements.map((p) => p.zIndex || 0),
-            100, // Base z-index for sticky notes
+            100,
           ) + 1,
       };
       setStickyNotes([...stickyNotes, newNote]);
@@ -581,8 +704,8 @@ export function Journal() {
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
             ...polaroidElements.map((p) => p.zIndex || 0),
-            0
-        ) + 1,
+            0,
+          ) + 1,
       };
       setTextBoxes([...textBoxes, newTextBox]);
       setSelectedItem(newTextBox.id);
@@ -602,9 +725,9 @@ export function Journal() {
         baseFontSize: 20,
         color: "#19344a",
         isLocked: false,
-        isHighlighted: false, // Add this
-        isHighlighting: false, // Add this
-        highlightProgress: 0, // Add this
+        isHighlighted: false,
+        isHighlighting: false,
+        highlightProgress: 0,
         zIndex:
           Math.max(
             ...stickyNotes.map((n) => n.zIndex || 0),
@@ -612,7 +735,7 @@ export function Journal() {
             ...dateBoxes.map((d) => d.zIndex || 0),
             ...tapeElements.map((t) => t.zIndex || 0),
             ...polaroidElements.map((p) => p.zIndex || 0),
-            0
+            0,
           ) + 1,
       };
       setDateBoxes([...dateBoxes, newDateBox]);
@@ -643,7 +766,6 @@ export function Journal() {
       setSelectedItemType("tape");
     } else if (toolName === "polaroid") {
       setHighlighterMode(false);
-      // Trigger file input
       fileInputRef.current.click();
     } else if (toolName === "highlighter") {
       setHighlighterMode(!highlighterMode);
@@ -676,12 +798,10 @@ export function Journal() {
             elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "alphabet") {
-          // Add this
           setAlphabetElements((elements) =>
             elements.filter((e) => e.id !== selectedItem),
           );
         } else if (selectedItemType === "background") {
-          // Handle both individual and dual background deletion
           if (selectedItem.includes("-both")) {
             const bgType = selectedItem.replace("-both", "");
             setBackgroundElements((elements) =>
@@ -697,7 +817,6 @@ export function Journal() {
         setSelectedItem(null);
         setSelectedItemType(null);
         setEditingText(null);
-  
       }
     } else {
       setHighlighterMode(false);
@@ -705,11 +824,9 @@ export function Journal() {
     }
   };
 
-  // Handle clicking on items - update around line 450
   const handleItemClick = (e, itemId, itemType) => {
     e.stopPropagation();
 
-    // Enable highlighter for both text and date elements
     if (highlighterMode && (itemType === "text" || itemType === "date")) {
       if (itemType === "text") {
         const textBox = textBoxes.find((t) => t.id === itemId);
@@ -720,23 +837,20 @@ export function Journal() {
       } else if (itemType === "date") {
         const dateBox = dateBoxes.find((d) => d.id === itemId);
         if (dateBox && !dateBox.isHighlighted && !dateBox.isHighlighting) {
-          animateHighlightDate(itemId); // New function for date highlighting
+          animateHighlightDate(itemId);
           setHighlighterMode(false);
         }
       }
       return;
     }
 
-    // For background elements, select both if they're the same type
     if (itemType === "background") {
       const clickedBg = backgroundElements.find((bg) => bg.id === itemId);
       if (clickedBg) {
-        // Find both left and right backgrounds of the same type
         const sameBgs = backgroundElements.filter(
           (bg) => bg.type === clickedBg.type,
         );
         if (sameBgs.length === 2) {
-          // Select both backgrounds by using a special identifier
           setSelectedItem(`${clickedBg.type}-both`);
           setSelectedItemType("background");
           return;
@@ -752,7 +866,6 @@ export function Journal() {
     }
   };
 
-  // Handle moving items
   const handleItemMouseDown = (e, itemId, itemType) => {
     if (highlighterMode) {
       handleItemClick(e, itemId, itemType);
@@ -766,7 +879,7 @@ export function Journal() {
     else if (itemType === "tape") items = tapeElements;
     else if (itemType === "polaroid") items = polaroidElements;
     else if (itemType === "doodle") items = doodleElements;
-    else if (itemType === "alphabet") items = alphabetElements; // Add this
+    else if (itemType === "alphabet") items = alphabetElements;
 
     const item = items.find((i) => i.id === itemId);
 
@@ -792,7 +905,7 @@ export function Journal() {
       else if (itemType === "tape") setItems = setTapeElements;
       else if (itemType === "polaroid") setItems = setPolaroidElements;
       else if (itemType === "doodle") setItems = setDoodleElements;
-      else if (itemType === "alphabet") setItems = setAlphabetElements; // Add this
+      else if (itemType === "alphabet") setItems = setAlphabetElements;
 
       setItems((items) =>
         items.map((i) =>
@@ -806,14 +919,12 @@ export function Journal() {
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-     
     };
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Handle text editing
   const handleTextDoubleClick = (textId) => {
     if (highlighterMode) return;
 
@@ -833,18 +944,15 @@ export function Journal() {
 
   const handleTextBlur = () => {
     setEditingText(null);
-  
   };
 
   const handleTextKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       setEditingText(null);
-  
     }
   };
 
-  // Handle resizing items
   const handleResize = (itemId, itemType, direction, e) => {
     e.stopPropagation();
     const startX = e.clientX;
@@ -886,39 +994,36 @@ export function Journal() {
             let newWidth = startWidth;
             let newHeight = startHeight;
 
-            // For alphabet, maintain aspect ratio
             if (itemType === "alphabet") {
               if (direction.includes("right") || direction.includes("left")) {
                 newWidth = direction.includes("right")
                   ? Math.max(30, startWidth + deltaX)
                   : Math.max(30, startWidth - deltaX);
-                newHeight = newWidth; // Keep square aspect ratio
+                newHeight = newWidth;
               } else {
                 newHeight = direction.includes("bottom")
                   ? Math.max(30, startHeight + deltaY)
                   : Math.max(30, startHeight - deltaY);
-                newWidth = newHeight; // Keep square aspect ratio
+                newWidth = newHeight;
               }
               return { ...i, width: newWidth, height: newHeight };
             }
 
-            // For doodle, maintain aspect ratio
             if (itemType === "doodle") {
               if (direction.includes("right") || direction.includes("left")) {
                 newWidth = direction.includes("right")
                   ? Math.max(50, startWidth + deltaX)
                   : Math.max(50, startWidth - deltaX);
-                newHeight = newWidth; // Keep square aspect ratio
+                newHeight = newWidth;
               } else {
                 newHeight = direction.includes("bottom")
                   ? Math.max(50, startHeight + deltaY)
                   : Math.max(50, startHeight - deltaY);
-                newWidth = newHeight; // Keep square aspect ratio
+                newWidth = newHeight;
               }
               return { ...i, width: newWidth, height: newHeight };
             }
 
-            // General resize logic for other elements
             if (direction.includes("right"))
               newWidth = Math.max(80, startWidth + deltaX);
             if (direction.includes("left"))
@@ -956,14 +1061,12 @@ export function Journal() {
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-
     };
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Handle rotation
   const handleRotate = (itemId, itemType, e) => {
     e.stopPropagation();
 
@@ -974,7 +1077,7 @@ export function Journal() {
     else if (itemType === "tape") items = tapeElements;
     else if (itemType === "polaroid") items = polaroidElements;
     else if (itemType === "doodle") items = doodleElements;
-    else if (itemType === "alphabet") items = alphabetElements; // Add this
+    else if (itemType === "alphabet") items = alphabetElements;
 
     const item = items.find((i) => i.id === itemId);
     const rect = e.currentTarget.parentElement.getBoundingClientRect();
@@ -995,7 +1098,7 @@ export function Journal() {
       else if (itemType === "tape") setItems = setTapeElements;
       else if (itemType === "polaroid") setItems = setPolaroidElements;
       else if (itemType === "doodle") setItems = setDoodleElements;
-      else if (itemType === "alphabet") setItems = setAlphabetElements; // Add this
+      else if (itemType === "alphabet") setItems = setAlphabetElements;
 
       setItems((items) =>
         items.map((i) =>
@@ -1013,7 +1116,6 @@ export function Journal() {
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Confirm positioning
   const confirmPosition = () => {
     if (selectedItem && selectedItemType) {
       if (selectedItemType === "sticky") {
@@ -1053,7 +1155,6 @@ export function Journal() {
           ),
         );
       } else if (selectedItemType === "alphabet") {
-        // Add this
         setAlphabetElements((elements) =>
           elements.map((e) =>
             e.id === selectedItem ? { ...e, isLocked: true } : e,
@@ -1066,7 +1167,6 @@ export function Journal() {
     setEditingText(null);
   };
 
-  // Click outside to deselect
   const handleContainerClick = (e) => {
     if (
       e.target === e.currentTarget ||
@@ -1081,7 +1181,11 @@ export function Journal() {
   };
 
   return (
-    <div className="image-container" onClick={handleContainerClick}>
+    <div
+      className="image-container"
+      ref={journalRef}
+      onClick={handleContainerClick}
+    >
       <img src={journal1} className="main-image" alt="Journal" />
       <img src={notebook} className="notebook-image" alt="Notebook" />
       <button
@@ -1090,13 +1194,54 @@ export function Journal() {
         title={isMusicPlaying ? "Mute Music" : "Unmute Music"}
       >
         <i
-          className={`fas ${
-            isMusicPlaying ? "fa-volume-up" : "fa-volume-mute"
-          }`}
+          className={`fas ${isMusicPlaying ? "fa-volume-up" : "fa-volume-mute"}`}
         ></i>
       </button>
 
-      {/* Music Attribution */}
+      <button
+        className="snapshot-btn"
+        onClick={handleDownloadSnapshot}
+        title="Download snapshot"
+      >
+        <i className="fas fa-camera"></i>
+      </button>
+
+      <button
+        className="save-page-btn"
+        onClick={handleSavePage}
+        title="Save this page"
+      >
+        <i className="fas fa-save"></i>
+      </button>
+      <button
+        className="delete-page-btn"
+        onClick={handleDeletePage}
+        disabled={currentPageIndex >= pages.length}
+        title="Delete this page"
+      >
+        <i className="fas fa-trash"></i>
+      </button>
+      <div className="page-nav">
+        <button
+          className="page-nav-btn"
+          onClick={handlePreviousPage}
+          disabled={currentPageIndex <= 0}
+          title="Previous page"
+        >
+          <i className="fas fa-chevron-left"></i>
+        </button>
+        <span className="page-nav-label">
+          {currentPageIndex + 1} / {pages.length + 1}
+        </span>
+        <button
+          className="page-nav-btn"
+          onClick={handleNextPage}
+          disabled={currentPageIndex >= pages.length}
+          title="Next page"
+        >
+          <i className="fas fa-chevron-right"></i>
+        </button>
+      </div>
       <div className="music-attribution">
         Music by{" "}
         <a
@@ -1116,7 +1261,6 @@ export function Journal() {
         </a>
       </div>
 
-      {/* Hidden file input for polaroid upload */}
       <input
         type="file"
         ref={fileInputRef}
@@ -1125,14 +1269,12 @@ export function Journal() {
         style={{ display: "none" }}
       />
 
-      {/* Highlighter Mode Indicator */}
       {highlighterMode && (
         <div className="highlighter-indicator">
           ✏️ Click on text to highlight
         </div>
       )}
 
-      {/* Background Elements - Complete corrected version */}
       {backgroundElements.map((bgElement) => {
         const isBothSelected =
           selectedItem === `${bgElement.type}-both` &&
@@ -1141,640 +1283,142 @@ export function Journal() {
           selectedItem === bgElement.id && selectedItemType === "background";
 
         return (
-          <div
+          <BackgroundElement
             key={bgElement.id}
-            className={`background-element ${bgElement.name} ${
-              isBothSelected || isIndividualSelected ? "selected" : ""
-            }`}
-            style={{
-              position: "absolute",
-              left: `${bgElement.x}px`,
-              top: `${bgElement.y}px`,
-              width: `${bgElement.width}px`,
-              height: `${bgElement.height}px`,
-              pointerEvents: "auto",
-              zIndex: bgElement.zIndex,
-              cursor: "pointer",
-              overflow: "hidden",
-            }}
-            onClick={(e) => handleItemClick(e, bgElement.id, "background")}
-          >
-            {/* Use img tag for all background patterns */}
-            <img
-              src={
-                bgElement.type === "dot"
-                  ? require("./images/e_dot.png")
-                  : bgElement.type === "grid"
-                    ? require("./images/e_grid.png")
-                    : bgElement.type === "checkered"
-                      ? require("./images/e_checkered.png")
-                      : ""
-              }
-              alt={`${bgElement.type} pattern`}
-              style={{
-                position: "absolute",
-                top: "-65px",
-                left: "-355px",
-                width: "1200px",
-                height: "810px",
-                objectFit: "repeat",
-                opacity: 0.8,
-                pointerEvents: "none",
-              }}
-            />
-          </div>
+            bgElement={bgElement}
+            isSelected={isBothSelected || isIndividualSelected}
+            onClick={handleItemClick}
+          />
         );
       })}
 
-      {/* Sticky Notes */}
       {stickyNotes.map((note) => (
-        <div
+        <StickyNote
           key={note.id}
-          className={`sticky-note ${
-            selectedItem === note.id && selectedItemType === "sticky"
-              ? "selected"
-              : ""
-          } ${note.isLocked ? "locked" : ""} ${getPositionClass(note)}`}
-          style={{
-            left: `${note.x}px`,
-            top: `${note.y}px`,
-            width: `${note.width}px`,
-            height: `${note.height}px`,
-            transform: `rotate(${note.rotation}deg)`,
-            zIndex: note.zIndex,
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, note.id, "sticky")}
-        >
-          <img src={e_note} alt="Sticky Note" className="sticky-note-image" />
-
-          {selectedItem === note.id &&
-            selectedItemType === "sticky" &&
-            !note.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(note.id, "sticky", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(note.id, "sticky", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(note.id, "sticky", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(note.id, "sticky", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(note.id, "sticky", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          note={note}
+          isSelected={selectedItem === note.id && selectedItemType === "sticky"}
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Text Boxes */}
       {textBoxes.map((textBox) => (
-        <div
+        <TextBox
           key={textBox.id}
-          className={`text-box ${
+          textBox={textBox}
+          isSelected={
             selectedItem === textBox.id && selectedItemType === "text"
-              ? "selected"
-              : ""
-          } ${textBox.isLocked ? "locked" : ""} ${
-            textBox.isHighlighted ? "highlighted" : ""
-          } ${textBox.isHighlighting ? "highlighting" : ""} ${getPositionClass(
-            textBox,
-          )}`}
-          style={{
-            left: `${textBox.x}px`,
-            top: `${textBox.y}px`,
-            width: `${textBox.width}px`,
-            height: `${textBox.height}px`,
-            transform: `rotate(${textBox.rotation}deg)`,
-            zIndex: textBox.zIndex,
-            cursor: highlighterMode
-              ? "crosshair"
-              : textBox.isLocked
-                ? "pointer"
-                : "move",
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, textBox.id, "text")}
-          onDoubleClick={() => handleTextDoubleClick(textBox.id)}
-        >
-          {editingText === textBox.id ? (
-            <textarea
-              className="text-box-input"
-              value={textBox.text}
-              onChange={(e) => handleTextChange(textBox.id, e.target.value)}
-              onBlur={handleTextBlur}
-              onKeyDown={handleTextKeyDown}
-              autoFocus
-              style={{
-                fontSize: `${textBox.fontSize}px`,
-                color: textBox.color,
-                fontFamily: "Finger Paint, cursive",
-              }}
-            />
-          ) : (
-            <div
-              className="text-box-content"
-              style={{
-                fontSize: `${textBox.fontSize}px`,
-                color: textBox.color,
-                fontFamily: "Finger Paint, cursive",
-                position: "relative",
-              }}
-            >
-              {(textBox.isHighlighted || textBox.isHighlighting) && (
-                <div
-                  className="highlight-background"
-                  style={{
-                    width: `${textBox.highlightProgress || 100}%`,
-                  }}
-                />
-              )}
-              <span className="text-content">{textBox.text}</span>
-            </div>
-          )}
-
-          {selectedItem === textBox.id &&
-            selectedItemType === "text" &&
-            !textBox.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(textBox.id, "text", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(textBox.id, "text", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(textBox.id, "text", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(textBox.id, "text", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(textBox.id, "text", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          }
+          isEditing={editingText === textBox.id}
+          highlighterMode={highlighterMode}
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onDoubleClick={handleTextDoubleClick}
+          onTextChange={handleTextChange}
+          onTextBlur={handleTextBlur}
+          onTextKeyDown={handleTextKeyDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Date Boxes - Updated with highlighting support */}
       {dateBoxes.map((dateBox) => (
-        <div
+        <DateBox
           key={dateBox.id}
-          className={`date-box ${
+          dateBox={dateBox}
+          isSelected={
             selectedItem === dateBox.id && selectedItemType === "date"
-              ? "selected"
-              : ""
-          } ${dateBox.isLocked ? "locked" : ""} ${
-            dateBox.isHighlighted ? "highlighted" : ""
-          } ${dateBox.isHighlighting ? "highlighting" : ""} ${getPositionClass(
-            dateBox,
-          )}`}
-          style={{
-            left: `${dateBox.x}px`,
-            top: `${dateBox.y}px`,
-            width: `${dateBox.width}px`,
-            height: `${dateBox.height}px`,
-            transform: `rotate(${dateBox.rotation}deg)`,
-            zIndex: dateBox.zIndex,
-            cursor: highlighterMode
-              ? "crosshair"
-              : dateBox.isLocked
-                ? "pointer"
-                : "move", // Add crosshair cursor for highlighter mode
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, dateBox.id, "date")}
-        >
-          <div
-            className="date-box-content"
-            style={{
-              fontSize: `${dateBox.fontSize}px`,
-              color: dateBox.color,
-              fontFamily: "Finger Paint, cursive",
-              position: "relative", // Add relative positioning for highlight background
-            }}
-          >
-            {/* Add highlight background for date boxes */}
-            {(dateBox.isHighlighted || dateBox.isHighlighting) && (
-              <div
-                className="highlight-background"
-                style={{
-                  width: `${dateBox.highlightProgress || 100}%`,
-                }}
-              />
-            )}
-            <span className="text-content">{dateBox.date}</span>
-          </div>
-
-          {selectedItem === dateBox.id &&
-            selectedItemType === "date" &&
-            !dateBox.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(dateBox.id, "date", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(dateBox.id, "date", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(dateBox.id, "date", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(dateBox.id, "date", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(dateBox.id, "date", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          }
+          highlighterMode={highlighterMode}
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Tape Elements */}
       {tapeElements.map((tape) => (
-        <div
+        <TapeElement
           key={tape.id}
-          className={`tape-element ${
-            selectedItem === tape.id && selectedItemType === "tape"
-              ? "selected"
-              : ""
-          } ${tape.isLocked ? "locked" : ""} ${getPositionClass(tape)}`}
-          style={{
-            left: `${tape.x}px`,
-            top: `${tape.y}px`,
-            width: `${tape.width}px`,
-            height: `${tape.height}px`,
-            transform: `rotate(${tape.rotation}deg)`,
-            zIndex: tape.zIndex,
-            cursor: tape.isLocked ? "pointer" : "move",
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, tape.id, "tape")}
-        >
-          <img src={e_tape} alt="Tape" className="tape-image" />
-
-          {selectedItem === tape.id &&
-            selectedItemType === "tape" &&
-            !tape.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(tape.id, "tape", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(tape.id, "tape", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(tape.id, "tape", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(tape.id, "tape", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(tape.id, "tape", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          tape={tape}
+          isSelected={selectedItem === tape.id && selectedItemType === "tape"}
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Polaroid Elements - Updated JSX */}
       {polaroidElements.map((polaroid) => (
-        <div
+        <PolaroidElement
           key={polaroid.id}
-          className={`polaroid-element ${
+          polaroid={polaroid}
+          isSelected={
             selectedItem === polaroid.id && selectedItemType === "polaroid"
-              ? "selected"
-              : ""
-          } ${polaroid.isLocked ? "locked" : ""} ${getPositionClass(polaroid)}`}
-          style={{
-            left: `${polaroid.x}px`,
-            top: `${polaroid.y}px`,
-            width: `${polaroid.width}px`,
-            height: `${polaroid.height}px`,
-            transform: `rotate(${polaroid.rotation}deg)`,
-            zIndex: polaroid.zIndex,
-            cursor: polaroid.isLocked ? "pointer" : "move",
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, polaroid.id, "polaroid")}
-        >
-          <div className="polaroid-container">
-            {/* Photo area */}
-            <div className="polaroid-photo">
-              <img
-                src={polaroid.uploadedImage}
-                alt="User Upload"
-                className="uploaded-image"
-              />
-            </div>
-            {/* White bottom area for polaroid effect */}
-            <div className="polaroid-bottom"></div>
-          </div>
-
-          {selectedItem === polaroid.id &&
-            selectedItemType === "polaroid" &&
-            !polaroid.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(polaroid.id, "polaroid", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(polaroid.id, "polaroid", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(polaroid.id, "polaroid", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(polaroid.id, "polaroid", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(polaroid.id, "polaroid", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          }
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Doodle Elements */}
       {doodleElements.map((doodle) => (
-        <div
+        <DoodleElement
           key={doodle.id}
-          className={`doodle-element ${
+          doodle={doodle}
+          isSelected={
             selectedItem === doodle.id && selectedItemType === "doodle"
-              ? "selected"
-              : ""
-          } ${doodle.isLocked ? "locked" : ""} ${getPositionClass(doodle)}`}
-          style={{
-            left: `${doodle.x}px`,
-            top: `${doodle.y}px`,
-            width: `${doodle.width}px`,
-            height: `${doodle.height}px`,
-            transform: `rotate(${doodle.rotation}deg)`,
-            zIndex: doodle.zIndex,
-            cursor: doodle.isLocked ? "pointer" : "move",
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, doodle.id, "doodle")}
-        >
-          <img
-            src={require(`./images/d_${doodle.type}.png`)}
-            alt={`${doodle.type} doodle`}
-            className="doodle-image"
-          />
-
-          {selectedItem === doodle.id &&
-            selectedItemType === "doodle" &&
-            !doodle.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(doodle.id, "doodle", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(doodle.id, "doodle", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(doodle.id, "doodle", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(doodle.id, "doodle", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(doodle.id, "doodle", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          }
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      {/* Alphabet Elements */}
       {alphabetElements.map((alphabet) => (
-        <div
+        <AlphabetElement
           key={alphabet.id}
-          className={`alphabet-element ${
+          alphabet={alphabet}
+          isSelected={
             selectedItem === alphabet.id && selectedItemType === "alphabet"
-              ? "selected"
-              : ""
-          } ${alphabet.isLocked ? "locked" : ""} ${getPositionClass(alphabet)}`}
-          style={{
-            left: `${alphabet.x}px`,
-            top: `${alphabet.y}px`,
-            width: `${alphabet.width}px`,
-            height: `${alphabet.height}px`,
-            transform: `rotate(${alphabet.rotation}deg)`,
-            zIndex: alphabet.zIndex,
-            cursor: alphabet.isLocked ? "pointer" : "move",
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, alphabet.id, "alphabet")}
-        >
-          <img
-            src={require(`./images/${alphabet.number}.png`)}
-            alt={`${alphabet.type} alphabet`}
-            className="alphabet-image"
-          />
-
-          {selectedItem === alphabet.id &&
-            selectedItemType === "alphabet" &&
-            !alphabet.isLocked && (
-              <>
-                <div
-                  className="resize-handle top-left"
-                  onMouseDown={(e) =>
-                    handleResize(alphabet.id, "alphabet", "top-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle top-right"
-                  onMouseDown={(e) =>
-                    handleResize(alphabet.id, "alphabet", "top-right", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-left"
-                  onMouseDown={(e) =>
-                    handleResize(alphabet.id, "alphabet", "bottom-left", e)
-                  }
-                ></div>
-                <div
-                  className="resize-handle bottom-right"
-                  onMouseDown={(e) =>
-                    handleResize(alphabet.id, "alphabet", "bottom-right", e)
-                  }
-                ></div>
-                <div
-                  className="rotate-handle"
-                  onMouseDown={(e) => handleRotate(alphabet.id, "alphabet", e)}
-                >
-                  ⟲
-                </div>
-                <div className="confirm-handle" onClick={confirmPosition}>
-                  ✓
-                </div>
-              </>
-            )}
-        </div>
+          }
+          getPositionClass={getPositionClass}
+          onMouseDown={handleItemMouseDown}
+          onResize={handleResize}
+          onRotate={handleRotate}
+          onConfirm={confirmPosition}
+        />
       ))}
 
-      <div
-        className={isOpen ? "open-drawer" : "close-drawer"}
-        onClick={toggleDrawer}
-      >
-        {isOpen && (
-          <>
-            {showBackground ? (
-              <Background
-                onBackgroundSelect={handleBackgroundSelect}
-                onBack={handleBackToMain}
-                currentBackground={currentBackground}
-              />
-            ) : showDoodle ? (
-              <Doodle
-                onDoodleSelect={handleDoodleSelect}
-                onBack={handleBackFromDoodle}
-              />
-            ) : showAlphabet ? (
-              <Alphabet
-                onAlphabetSelect={handleAlphabetSelect}
-                onBack={handleBackFromAlphabet}
-              />
-            ) : (
-              <div className="drawer-icons-grid">
-                {toolIcons.map((tool, index) => (
-                  <div
-                    key={tool.name}
-                    className={`drawer-icon ${
-                      highlighterMode && tool.name === "highlighter"
-                        ? "active"
-                        : ""
-                    } ${
-                      (tool.name === "undo" && historyIndex <= 0) ||
-                      (tool.name === "redo" &&
-                        historyIndex >= history.length - 1)
-                        ? "disabled"
-                        : ""
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playClickSound();
-                      handleToolClick(tool.name);
-                    }}
-                    title={tool.label}
-                  >
-                    <img src={tool.icon} alt={tool.label} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <Toolbar
+        isOpen={isOpen}
+        onToggleDrawer={toggleDrawer}
+        showBackground={showBackground}
+        showDoodle={showDoodle}
+        showAlphabet={showAlphabet}
+        onBackgroundSelect={handleBackgroundSelect}
+        onBackToMain={handleBackToMain}
+        currentBackground={currentBackground}
+        onDoodleSelect={handleDoodleSelect}
+        onBackFromDoodle={handleBackFromDoodle}
+        onAlphabetSelect={handleAlphabetSelect}
+        onBackFromAlphabet={handleBackFromAlphabet}
+        highlighterMode={highlighterMode}
+        historyIndex={historyIndex}
+        historyLength={history.length}
+        onToolClick={handleToolClick}
+        playClickSound={playClickSound}
+      />
     </div>
   );
 }
